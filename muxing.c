@@ -106,17 +106,20 @@ int main(int argc, char* argv[])
 	av_dump_format(ifmt_ctx_v, 0, in_filename_v, 0);
 	av_dump_format(ifmt_ctx_a, 0, in_filename_a, 0);
 	printf("======================================\n");
-	//Output
+	//Output: initialize the output AVFormatComtext
 	avformat_alloc_output_context2(&ofmt_ctx, NULL, NULL, out_filename);
 	if (!ofmt_ctx) {
 		printf( "Could not create output context\n");
 		ret = AVERROR_UNKNOWN;
 		goto end;
 	}
+	//AVOutputFormat
 	ofmt = ofmt_ctx->oformat;
 
-	for (i = 0; i < ifmt_ctx_v->nb_streams; i++) {
+	for (i = 0; i < ifmt_ctx_v->nb_streams/*how many streams in ifmt_ctx_v*/; i++) {
 		//Create output AVStream according to input AVStream
+		//do the for loop until it find a video stream
+		// that is to say: we may put a complete mp4 file as input parameter
 		if(ifmt_ctx_v->streams[i]->codec->codec_type==AVMEDIA_TYPE_VIDEO){
 		AVStream *in_stream = ifmt_ctx_v->streams[i];
 		AVStream *out_stream = avformat_new_stream(ofmt_ctx, in_stream->codec->codec);
@@ -139,6 +142,7 @@ int main(int argc, char* argv[])
 		}
 	}
 
+	//find a audio stream
 	for (i = 0; i < ifmt_ctx_a->nb_streams; i++) {
 		//Create output AVStream according to input AVStream
 		if(ifmt_ctx_a->streams[i]->codec->codec_type==AVMEDIA_TYPE_AUDIO){
