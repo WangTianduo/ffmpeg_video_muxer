@@ -1,26 +1,3 @@
-
-/**
- * 最简单的基于FFmpeg的视音频复用器
- * Simplest FFmpeg Muxer
- *
- * 雷霄骅 Lei Xiaohua
- * leixiaohua1020@126.com
- * 中国传媒大学/数字电视技术
- * Communication University of China / Digital TV Technology
- * http://blog.csdn.net/leixiaohua1020
- *
- * 本程序可以将视频码流和音频码流打包到一种封装格式中。
- * 程序中将AAC编码的音频码流和H.264编码的视频码流打包成
- * MPEG2TS封装格式的文件。
- * 需要注意的是本程序并不改变视音频的编码格式。
- *
- * This software mux a video bitstream and a audio bitstream 
- * together into a file.
- * In this example, it mux a H.264 bitstream (in MPEG2TS) and 
- * a AAC bitstream file together into MP4 format file.
- *
- */
-
 #include <stdio.h>
 
 #define __STDC_CONSTANT_MACROS
@@ -44,36 +21,39 @@ extern "C"
 #endif
 #endif
 
-/*
+/***************************************************************
 FIX: H.264 in some container format (FLV, MP4, MKV etc.) need 
 "h264_mp4toannexb" bitstream filter (BSF)
   *Add SPS,PPS in front of IDR frame
   *Add start code ("0,0,0,1") in front of NALU
 H.264 in some container (MPEG2TS) don't need this BSF.
-*/
-//'1': Use H.264 Bitstream Filter 
-#define USE_H264BSF 0
+****************************************************************/
 
-/*
+#define USE_H264BSF 0 //'1': Use H.264 Bitstream Filter 
+
+/***************************************************************
 FIX:AAC in some container format (FLV, MP4, MKV etc.) need 
 "aac_adtstoasc" bitstream filter (BSF)
-*/
-//'1': Use AAC Bitstream Filter 
-#define USE_AACBSF 0
+****************************************************************/
+ 
+#define USE_AACBSF 0 //'1': Use AAC Bitstream Filter 
 
 
 
 int main(int argc, char* argv[])
-{
+{	
+	//initialize the ptr by using NULL
 	AVOutputFormat *ofmt = NULL;
 	//Input AVFormatContext and Output AVFormatContext
 	AVFormatContext *ifmt_ctx_v = NULL, *ifmt_ctx_a = NULL,*ofmt_ctx = NULL;
+	//AVPacket declare once but reused again and again
 	AVPacket pkt;
+
 	int ret, i;
-	int videoindex_v=-1,videoindex_out=-1;
-	int audioindex_a=-1,audioindex_out=-1;
-	int frame_index=0;
-	int64_t cur_pts_v=0,cur_pts_a=0;
+	int videoindex_v = -1, videoindex_out = -1;
+	int audioindex_a = -1, audioindex_out = -1;
+	int frame_index = 0;
+	int64_t cur_pts_v = 0,cur_pts_a = 0;
 	enum AVRounding avRounding;
 	//const char *in_filename_v = "cuc_ieschool.ts";//Input file URL
 	const char *in_filename_v = argv[1];
@@ -83,12 +63,28 @@ int main(int argc, char* argv[])
 	const char *in_filename_a = argv[2];
 
 	const char *out_filename = strcat(argv[3], "cuc_ieschool.mp4");//Output file URL
+
+	//The truly start of the program
 	av_register_all();
-	//Input
+	
+	/*Input
+
+	 *To deal with the structs, we may need to give the pointer to the struct instead of
+	  give the struct itself directly.
+
+	 *The first param in the below function is a NULL pointer that has been initialized
+	  above using NULL. After the below function finishes, the struct will be filled up.
+	  If we put the struct pointer directly(rather than put the address of the pointer), 
+	  the struct will freed and fail.
+
+	 *A guess why it uses double ptr here: to clip the address to another ptr in case do
+	  some unexpected things to the initial one. */
 	if ((ret = avformat_open_input(&ifmt_ctx_v, in_filename_v, 0, 0)) < 0) {
 		printf( "Could not open input file.");
 		goto end;
 	}
+	/* Read packets of a media file to get stream information
+	 * */
 	if ((ret = avformat_find_stream_info(ifmt_ctx_v, 0)) < 0) {
 		printf( "Failed to retrieve input stream information");
 		goto end;
