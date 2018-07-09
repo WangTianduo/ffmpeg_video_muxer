@@ -25,12 +25,15 @@ int main(int argc, char* argv[])
 	const char *in_filename_v = "../resource/aa.h264";
 	const char *out_filename = "../resource/cdd.mp4";
 
+	//The very start of the muxing
 	av_register_all();
 
+	//write basic info into input AVFormatContext(1)
 	if ((ret = avformat_open_input(&ifmt_ctx_v, in_filename_v, 0, 0)) < 0) {
 		printf( "Could not open input file.");
 		goto end;
 	}
+	//write basic info into input AVFormatContext(2)
 	if ((ret = avformat_find_stream_info(ifmt_ctx_v, 0)) < 0) {
 		printf( "Failed to retrieve input stream information");
 		goto end;
@@ -40,6 +43,7 @@ int main(int argc, char* argv[])
 	av_dump_format(ifmt_ctx_v, 0, in_filename_v, 0);
 	printf("======================================\n");
 	
+	//alloc memory for output AVFormatContext
 	avformat_alloc_output_context2(&ofmt_ctx, NULL, NULL, out_filename);
 	if (!ofmt_ctx) {
 		printf( "Could not create output context\n");
@@ -48,6 +52,7 @@ int main(int argc, char* argv[])
 	}
 	ofmt = ofmt_ctx->oformat;
 
+	//make sure the input stream is video
 	if(ifmt_ctx_v->streams[0]->codec->codec_type==AVMEDIA_TYPE_VIDEO){
 		AVStream *in_stream = ifmt_ctx_v->streams[0];
 		AVStream *out_stream = avformat_new_stream(ofmt_ctx, in_stream->codec->codec);
@@ -64,6 +69,10 @@ int main(int argc, char* argv[])
 			goto end;
 		}
 		out_stream->codec->codec_tag = 0;
+	}else{
+		printf("Not a video file\n");
+		ret = AVERROR_UNKNOWN;
+		goto end;
 	}
 
 	printf("==========Output Information==========\n");
@@ -83,6 +92,7 @@ int main(int argc, char* argv[])
 		goto end;
 	}
 
+	//write in the content of video frame by frame
 	while (1) {
 		AVFormatContext *ifmt_ctx;
 		int stream_index=0;
