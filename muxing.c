@@ -1,37 +1,6 @@
-/**
- * 最简单的基于FFmpeg的视音频复用器
- * Simplest FFmpeg Muxer
- *
- * 雷霄骅 Lei Xiaohua
- * leixiaohua1020@126.com
- * 中国传媒大学/数字电视技术
- * Communication University of China / Digital TV Technology
- * http://blog.csdn.net/leixiaohua1020
- *
- * 本程序可以将视频码流和音频码流打包到一种封装格式中。
- * 程序中将AAC编码的音频码流和H.264编码的视频码流打包成
- * MPEG2TS封装格式的文件。
- * 需要注意的是本程序并不改变视音频的编码格式。
- *
- * This software mux a video bitstream and a audio bitstream 
- * together into a file.
- * In this example, it mux a H.264 bitstream (in MPEG2TS) and 
- * a AAC bitstream file together into MP4 format file.
- *
- */
-
 #include <stdio.h>
 
 #define __STDC_CONSTANT_MACROS
-
-#ifdef _WIN32
-//Windows
-extern "C"
-{
-#include "libavformat/avformat.h"
-};
-#else
-//Linux...
 #ifdef __cplusplus
 extern "C"
 {
@@ -40,26 +9,6 @@ extern "C"
 #ifdef __cplusplus
 };
 #endif
-#endif
-
-/*
-FIX: H.264 in some container format (FLV, MP4, MKV etc.) need 
-"h264_mp4toannexb" bitstream filter (BSF)
-  *Add SPS,PPS in front of IDR frame
-  *Add start code ("0,0,0,1") in front of NALU
-H.264 in some container (MPEG2TS) don't need this BSF.
-*/
-//'1': Use H.264 Bitstream Filter 
-#define USE_H264BSF 0
-
-/*
-FIX:AAC in some container format (FLV, MP4, MKV etc.) need 
-"aac_adtstoasc" bitstream filter (BSF)
-*/
-//'1': Use AAC Bitstream Filter 
-#define USE_AACBSF 0
-
-
 
 int main(int argc, char* argv[])
 {
@@ -75,11 +24,7 @@ int main(int argc, char* argv[])
 
 	enum AVRounding avRounding;
 
-	//const char *in_filename_v = "cuc_ieschool.ts";//Input file URL
 	const char *in_filename_v = "../resource/cuc_ieschool.h264";
-	//const char *in_filename_a = "cuc_ieschool.mp3";
-	//const char *in_filename_a = "gowest.m4a";
-	//const char *in_filename_a = "gowest.aac";
 	const char *in_filename_a = "../resource/huoyuanjia.mp3";
 
 	const char *out_filename = "../resource/cuc_ieschool.mp4";//Output file URL
@@ -260,15 +205,6 @@ int main(int argc, char* argv[])
 
 		}
 
-		/*//FIX:Bitstream Filter
-#if USE_H264BSF
-		av_bitstream_filter_filter(h264bsfc, in_stream->codec, NULL, &pkt.data, &pkt.size, pkt.data, pkt.size, 0);
-#endif
-#if USE_AACBSF
-		av_bitstream_filter_filter(aacbsfc, out_stream->codec, NULL, &pkt.data, &pkt.size, pkt.data, pkt.size, 0);
-#endif*/
-
-
 		//Convert PTS/DTS
 		pkt.pts = av_rescale_q_rnd(pkt.pts, in_stream->time_base, out_stream->time_base, avRounding);
 		pkt.dts = av_rescale_q_rnd(pkt.dts, in_stream->time_base, out_stream->time_base, avRounding);
@@ -287,13 +223,6 @@ int main(int argc, char* argv[])
 	}
 	//Write file trailer
 	av_write_trailer(ofmt_ctx);
-
-/*#if USE_H264BSF
-	av_bitstream_filter_close(h264bsfc);
-#endif
-#if USE_AACBSF
-	av_bitstream_filter_close(aacbsfc);
-#endif*/
 
 end:
 	avformat_close_input(&ifmt_ctx_v);
