@@ -78,8 +78,6 @@ int main(int argc, char* argv[])
 			goto end;
 		}
 		out_stream->codec->codec_tag = 0;
-		/*if (ofmt_ctx->oformat->flags & AVFMT_GLOBALHEADER)
-			out_stream->codec->flags |= CODEC_FLAG_GLOBAL_HEADER;*/
 		break;
 		}
 	}
@@ -112,6 +110,7 @@ int main(int argc, char* argv[])
 	printf("==========Output Information==========\n");
 	av_dump_format(ofmt_ctx, 0, out_filename, 1);
 	printf("======================================\n");
+
 	//Open output file
 	if (!(ofmt->flags & AVFMT_NOFILE)) {
 		if (avio_open(&ofmt_ctx->pb, out_filename, AVIO_FLAG_WRITE) < 0) {
@@ -125,15 +124,6 @@ int main(int argc, char* argv[])
 		goto end;
 	}
 
-
-	//FIX
-#if USE_H264BSF
-	AVBitStreamFilterContext* h264bsfc =  av_bitstream_filter_init("h264_mp4toannexb"); 
-#endif
-#if USE_AACBSF
-	AVBitStreamFilterContext* aacbsfc =  av_bitstream_filter_init("aac_adtstoasc"); 
-#endif
-
 	while (1) {
 		AVFormatContext *ifmt_ctx;
 		int stream_index=0;
@@ -145,7 +135,7 @@ int main(int argc, char* argv[])
 			stream_index=videoindex_out;
 
 			if(av_read_frame(ifmt_ctx, &pkt) >= 0){
-				do{
+				//do{
 					in_stream  = ifmt_ctx->streams[pkt.stream_index];
 					out_stream = ofmt_ctx->streams[stream_index];
 
@@ -165,9 +155,9 @@ int main(int argc, char* argv[])
 						}
 
 						cur_pts_v=pkt.pts;
-						break;
+						//break;
 					}
-				}while(av_read_frame(ifmt_ctx, &pkt) >= 0);
+				//}while(av_read_frame(ifmt_ctx, &pkt) >= 0);
 			}else{
 				break;
 			}
@@ -175,7 +165,7 @@ int main(int argc, char* argv[])
 			ifmt_ctx=ifmt_ctx_a;
 			stream_index=audioindex_out;
 			if(av_read_frame(ifmt_ctx, &pkt) >= 0){
-				do{
+				//do{
 					in_stream  = ifmt_ctx->streams[pkt.stream_index];
 					out_stream = ofmt_ctx->streams[stream_index];
 
@@ -196,9 +186,9 @@ int main(int argc, char* argv[])
 						}
 						cur_pts_a=pkt.pts;
 
-						break;
+						//break;
 					}
-				}while(av_read_frame(ifmt_ctx, &pkt) >= 0);
+				//}while(av_read_frame(ifmt_ctx, &pkt) >= 0);
 			}else{
 				break;
 			}
