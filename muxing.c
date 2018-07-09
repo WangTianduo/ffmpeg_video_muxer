@@ -260,13 +260,13 @@ int main(int argc, char* argv[])
 
 		}
 
-		//FIX:Bitstream Filter
+		/*//FIX:Bitstream Filter
 #if USE_H264BSF
 		av_bitstream_filter_filter(h264bsfc, in_stream->codec, NULL, &pkt.data, &pkt.size, pkt.data, pkt.size, 0);
 #endif
 #if USE_AACBSF
 		av_bitstream_filter_filter(aacbsfc, out_stream->codec, NULL, &pkt.data, &pkt.size, pkt.data, pkt.size, 0);
-#endif
+#endif*/
 
 
 		//Convert PTS/DTS
@@ -288,12 +288,12 @@ int main(int argc, char* argv[])
 	//Write file trailer
 	av_write_trailer(ofmt_ctx);
 
-#if USE_H264BSF
+/*#if USE_H264BSF
 	av_bitstream_filter_close(h264bsfc);
 #endif
 #if USE_AACBSF
 	av_bitstream_filter_close(aacbsfc);
-#endif
+#endif*/
 
 end:
 	avformat_close_input(&ifmt_ctx_v);
