@@ -13,23 +13,20 @@ extern "C"
 int main(int argc, char* argv[])
 {
 	AVOutputFormat *ofmt = NULL;
-	//Input AVFormatContext and Output AVFormatContext
-	AVFormatContext *ifmt_ctx_v = NULL, /**ifmt_ctx_a = NULL,*/*ofmt_ctx = NULL;
+	AVFormatContext *ifmt_ctx_v = NULL, *ofmt_ctx = NULL;
 	AVPacket pkt;
-	int ret, i;
+	int ret;
 	int videoindex_v=-1,videoindex_out=-1;
-	//int audioindex_a=-1,audioindex_out=-1;
 	int frame_index=0;
-	int64_t cur_pts_v=0;//,cur_pts_a=0;
+	int64_t cur_pts_v=0;
 
 	enum AVRounding avRounding;
 
-	const char *in_filename_v = "../resource/cuc_ieschool.h264";
-	//const char *in_filename_a = "../resource/huoyuanjia.mp3";
+	const char *in_filename_v = "../resource/aa.h264";
+	const char *out_filename = "../resource/cdd.mp4";
 
-	const char *out_filename = "../resource/cuc_ieschool.mp4";//Output file URL
 	av_register_all();
-	//Input
+
 	if ((ret = avformat_open_input(&ifmt_ctx_v, in_filename_v, 0, 0)) < 0) {
 		printf( "Could not open input file.");
 		goto end;
@@ -39,19 +36,10 @@ int main(int argc, char* argv[])
 		goto end;
 	}
 
-	/*if ((ret = avformat_open_input(&ifmt_ctx_a, in_filename_a, 0, 0)) < 0) {
-		printf( "Could not open input file.");
-		goto end;
-	}
-	if ((ret = avformat_find_stream_info(ifmt_ctx_a, 0)) < 0) {
-		printf( "Failed to retrieve input stream information");
-		goto end;
-	}*/
 	printf("===========Input Information==========\n");
 	av_dump_format(ifmt_ctx_v, 0, in_filename_v, 0);
-	/*av_dump_format(ifmt_ctx_a, 0, in_filename_a, 0);*/
 	printf("======================================\n");
-	//Output
+	
 	avformat_alloc_output_context2(&ofmt_ctx, NULL, NULL, out_filename);
 	if (!ofmt_ctx) {
 		printf( "Could not create output context\n");
@@ -60,12 +48,10 @@ int main(int argc, char* argv[])
 	}
 	ofmt = ofmt_ctx->oformat;
 
-	for (i = 0; i < ifmt_ctx_v->nb_streams; i++) {
-		//Create output AVStream according to input AVStream
-		if(ifmt_ctx_v->streams[i]->codec->codec_type==AVMEDIA_TYPE_VIDEO){
-		AVStream *in_stream = ifmt_ctx_v->streams[i];
+	if(ifmt_ctx_v->streams[0]->codec->codec_type==AVMEDIA_TYPE_VIDEO){
+		AVStream *in_stream = ifmt_ctx_v->streams[0];
 		AVStream *out_stream = avformat_new_stream(ofmt_ctx, in_stream->codec->codec);
-		videoindex_v=i;
+		videoindex_v=0;
 		if (!out_stream) {
 			printf( "Failed allocating output stream\n");
 			ret = AVERROR_UNKNOWN;
@@ -78,34 +64,7 @@ int main(int argc, char* argv[])
 			goto end;
 		}
 		out_stream->codec->codec_tag = 0;
-		break;
-		}
 	}
-
-	/*for (i = 0; i < ifmt_ctx_a->nb_streams; i++) {
-		//Create output AVStream according to input AVStream
-		if(ifmt_ctx_a->streams[i]->codec->codec_type==AVMEDIA_TYPE_AUDIO){
-			AVStream *in_stream = ifmt_ctx_a->streams[i];
-			AVStream *out_stream = avformat_new_stream(ofmt_ctx, in_stream->codec->codec);
-			audioindex_a=i;
-			if (!out_stream) {
-				printf( "Failed allocating output stream\n");
-				ret = AVERROR_UNKNOWN;
-				goto end;
-			}
-			audioindex_out=out_stream->index;
-			//Copy the settings of AVCodecContext
-			if (avcodec_copy_context(out_stream->codec, in_stream->codec) < 0) {
-				printf( "Failed to copy context from input to output stream codec context\n");
-				goto end;
-			}
-			out_stream->codec->codec_tag = 0;
-			/*if (ofmt_ctx->oformat->flags & AVFMT_GLOBALHEADER)
-				out_stream->codec->flags |= CODEC_FLAG_GLOBAL_HEADER;*/
-
-	/*		break;
-		}
-	}*/
 
 	printf("==========Output Information==========\n");
 	av_dump_format(ofmt_ctx, 0, out_filename, 1);
@@ -118,7 +77,7 @@ int main(int argc, char* argv[])
 			goto end;
 		}
 	}
-	//Write file header
+
 	if (avformat_write_header(ofmt_ctx, NULL) < 0) {
 		printf( "Error occurred when opening output file\n");
 		goto end;
@@ -179,7 +138,6 @@ int main(int argc, char* argv[])
 
 end:
 	avformat_close_input(&ifmt_ctx_v);
-	//avformat_close_input(&ifmt_ctx_a);
 	if (ofmt_ctx && !(ofmt->flags & AVFMT_NOFILE))
 		avio_close(ofmt_ctx->pb);
 	avformat_free_context(ofmt_ctx);
