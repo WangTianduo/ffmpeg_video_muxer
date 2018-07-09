@@ -130,70 +130,65 @@ int main(int argc, char* argv[])
 		AVStream *in_stream, *out_stream;
 
 		//Get an AVPacket
-		if(av_compare_ts(cur_pts_v,ifmt_ctx_v->streams[videoindex_v]->time_base,cur_pts_a,ifmt_ctx_a->streams[audioindex_a]->time_base) <= 0){
+		//if(av_compare_ts(cur_pts_v,ifmt_ctx_v->streams[videoindex_v]->time_base,cur_pts_a,ifmt_ctx_a->streams[audioindex_a]->time_base) <= 0){
 			ifmt_ctx=ifmt_ctx_v;
 			stream_index=videoindex_out;
 
 			if(av_read_frame(ifmt_ctx, &pkt) >= 0){
-				//do{
-					in_stream  = ifmt_ctx->streams[pkt.stream_index];
-					out_stream = ofmt_ctx->streams[stream_index];
+				in_stream  = ifmt_ctx->streams[pkt.stream_index];
+				out_stream = ofmt_ctx->streams[stream_index];
 
-					if(pkt.stream_index==videoindex_v){
-						//FIX：No PTS (Example: Raw H.264)
-						//Simple Write PTS
-						if(pkt.pts==AV_NOPTS_VALUE){
-							//Write PTS
-							AVRational time_base1=in_stream->time_base;
-							//Duration between 2 frames (us)
-							int64_t calc_duration=(double)AV_TIME_BASE/av_q2d(in_stream->r_frame_rate);
-							//Parameters
-							pkt.pts=(double)(frame_index*calc_duration)/(double)(av_q2d(time_base1)*AV_TIME_BASE);
-							pkt.dts=pkt.pts;
-							pkt.duration=(double)calc_duration/(double)(av_q2d(time_base1)*AV_TIME_BASE);
-							frame_index++;
-						}
-
-						cur_pts_v=pkt.pts;
-						//break;
+				if(pkt.stream_index==videoindex_v){
+					//FIX：No PTS (Example: Raw H.264)
+					//Simple Write PTS
+					if(pkt.pts==AV_NOPTS_VALUE){
+						//Write PTS
+						AVRational time_base1=in_stream->time_base;
+						//Duration between 2 frames (us)
+						int64_t calc_duration=(double)AV_TIME_BASE/av_q2d(in_stream->r_frame_rate);
+						//Parameters
+						pkt.pts=(double)(frame_index*calc_duration)/(double)(av_q2d(time_base1)*AV_TIME_BASE);
+						pkt.dts=pkt.pts;
+						pkt.duration=(double)calc_duration/(double)(av_q2d(time_base1)*AV_TIME_BASE);
+						frame_index++;
 					}
-				//}while(av_read_frame(ifmt_ctx, &pkt) >= 0);
+
+					cur_pts_v=pkt.pts;
+					
+				}
 			}else{
 				break;
 			}
-		}else{
-			ifmt_ctx=ifmt_ctx_a;
+		/*}else{ //deal with audio frames
+			ifmt_ctx=ifmt_ctx_a; 
 			stream_index=audioindex_out;
 			if(av_read_frame(ifmt_ctx, &pkt) >= 0){
-				//do{
-					in_stream  = ifmt_ctx->streams[pkt.stream_index];
-					out_stream = ofmt_ctx->streams[stream_index];
+				in_stream  = ifmt_ctx->streams[pkt.stream_index];
+				out_stream = ofmt_ctx->streams[stream_index];
 
-					if(pkt.stream_index==audioindex_a){
+				if(pkt.stream_index==audioindex_a){
 
-						//FIX：No PTS
-						//Simple Write PTS
-						if(pkt.pts==AV_NOPTS_VALUE){
-							//Write PTS
-							AVRational time_base1=in_stream->time_base;
-							//Duration between 2 frames (us)
-							int64_t calc_duration=(double)AV_TIME_BASE/av_q2d(in_stream->r_frame_rate);
-							//Parameters
-							pkt.pts=(double)(frame_index*calc_duration)/(double)(av_q2d(time_base1)*AV_TIME_BASE);
-							pkt.dts=pkt.pts;
-							pkt.duration=(double)calc_duration/(double)(av_q2d(time_base1)*AV_TIME_BASE);
-							frame_index++;
-						}
-						cur_pts_a=pkt.pts;
-
-						//break;
+					//FIX：No PTS
+					//Simple Write PTS
+					if(pkt.pts==AV_NOPTS_VALUE){
+						//Write PTS
+						AVRational time_base1=in_stream->time_base;
+						//Duration between 2 frames (us)
+						int64_t calc_duration=(double)AV_TIME_BASE/av_q2d(in_stream->r_frame_rate);
+						//Parameters
+						pkt.pts=(double)(frame_index*calc_duration)/(double)(av_q2d(time_base1)*AV_TIME_BASE);
+						pkt.dts=pkt.pts;
+						pkt.duration=(double)calc_duration/(double)(av_q2d(time_base1)*AV_TIME_BASE);
+						frame_index++;
 					}
-				//}while(av_read_frame(ifmt_ctx, &pkt) >= 0);
+					cur_pts_a=pkt.pts;
+				}
+				
 			}else{
 				break;
 			}
 
-		}
+		}*/
 
 		//Convert PTS/DTS
 		pkt.pts = av_rescale_q_rnd(pkt.pts, in_stream->time_base, out_stream->time_base, avRounding);
@@ -211,13 +206,12 @@ int main(int argc, char* argv[])
 		av_free_packet(&pkt);
 
 	}
-	//Write file trailer
+
 	av_write_trailer(ofmt_ctx);
 
 end:
 	avformat_close_input(&ifmt_ctx_v);
 	avformat_close_input(&ifmt_ctx_a);
-	/* close output */
 	if (ofmt_ctx && !(ofmt->flags & AVFMT_NOFILE))
 		avio_close(ofmt_ctx->pb);
 	avformat_free_context(ofmt_ctx);
