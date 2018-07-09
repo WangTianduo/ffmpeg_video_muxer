@@ -14,18 +14,18 @@ int main(int argc, char* argv[])
 {
 	AVOutputFormat *ofmt = NULL;
 	//Input AVFormatContext and Output AVFormatContext
-	AVFormatContext *ifmt_ctx_v = NULL, *ifmt_ctx_a = NULL,*ofmt_ctx = NULL;
+	AVFormatContext *ifmt_ctx_v = NULL, /**ifmt_ctx_a = NULL,*/*ofmt_ctx = NULL;
 	AVPacket pkt;
 	int ret, i;
 	int videoindex_v=-1,videoindex_out=-1;
-	int audioindex_a=-1,audioindex_out=-1;
+	//int audioindex_a=-1,audioindex_out=-1;
 	int frame_index=0;
-	int64_t cur_pts_v=0,cur_pts_a=0;
+	int64_t cur_pts_v=0;//,cur_pts_a=0;
 
 	enum AVRounding avRounding;
 
 	const char *in_filename_v = "../resource/cuc_ieschool.h264";
-	const char *in_filename_a = "../resource/huoyuanjia.mp3";
+	//const char *in_filename_a = "../resource/huoyuanjia.mp3";
 
 	const char *out_filename = "../resource/cuc_ieschool.mp4";//Output file URL
 	av_register_all();
@@ -39,17 +39,17 @@ int main(int argc, char* argv[])
 		goto end;
 	}
 
-	if ((ret = avformat_open_input(&ifmt_ctx_a, in_filename_a, 0, 0)) < 0) {
+	/*if ((ret = avformat_open_input(&ifmt_ctx_a, in_filename_a, 0, 0)) < 0) {
 		printf( "Could not open input file.");
 		goto end;
 	}
 	if ((ret = avformat_find_stream_info(ifmt_ctx_a, 0)) < 0) {
 		printf( "Failed to retrieve input stream information");
 		goto end;
-	}
+	}*/
 	printf("===========Input Information==========\n");
 	av_dump_format(ifmt_ctx_v, 0, in_filename_v, 0);
-	av_dump_format(ifmt_ctx_a, 0, in_filename_a, 0);
+	/*av_dump_format(ifmt_ctx_a, 0, in_filename_a, 0);*/
 	printf("======================================\n");
 	//Output
 	avformat_alloc_output_context2(&ofmt_ctx, NULL, NULL, out_filename);
@@ -82,7 +82,7 @@ int main(int argc, char* argv[])
 		}
 	}
 
-	for (i = 0; i < ifmt_ctx_a->nb_streams; i++) {
+	/*for (i = 0; i < ifmt_ctx_a->nb_streams; i++) {
 		//Create output AVStream according to input AVStream
 		if(ifmt_ctx_a->streams[i]->codec->codec_type==AVMEDIA_TYPE_AUDIO){
 			AVStream *in_stream = ifmt_ctx_a->streams[i];
@@ -103,9 +103,9 @@ int main(int argc, char* argv[])
 			/*if (ofmt_ctx->oformat->flags & AVFMT_GLOBALHEADER)
 				out_stream->codec->flags |= CODEC_FLAG_GLOBAL_HEADER;*/
 
-			break;
+	/*		break;
 		}
-	}
+	}*/
 
 	printf("==========Output Information==========\n");
 	av_dump_format(ofmt_ctx, 0, out_filename, 1);
@@ -129,66 +129,34 @@ int main(int argc, char* argv[])
 		int stream_index=0;
 		AVStream *in_stream, *out_stream;
 
-		//Get an AVPacket
-		//if(av_compare_ts(cur_pts_v,ifmt_ctx_v->streams[videoindex_v]->time_base,cur_pts_a,ifmt_ctx_a->streams[audioindex_a]->time_base) <= 0){
-			ifmt_ctx=ifmt_ctx_v;
-			stream_index=videoindex_out;
+		ifmt_ctx=ifmt_ctx_v;
+		stream_index=videoindex_out;
 
-			if(av_read_frame(ifmt_ctx, &pkt) >= 0){
-				in_stream  = ifmt_ctx->streams[pkt.stream_index];
-				out_stream = ofmt_ctx->streams[stream_index];
+		if(av_read_frame(ifmt_ctx, &pkt) >= 0){
+			in_stream  = ifmt_ctx->streams[pkt.stream_index];
+			out_stream = ofmt_ctx->streams[stream_index];
 
-				if(pkt.stream_index==videoindex_v){
-					//FIX：No PTS (Example: Raw H.264)
-					//Simple Write PTS
-					if(pkt.pts==AV_NOPTS_VALUE){
-						//Write PTS
-						AVRational time_base1=in_stream->time_base;
-						//Duration between 2 frames (us)
-						int64_t calc_duration=(double)AV_TIME_BASE/av_q2d(in_stream->r_frame_rate);
-						//Parameters
-						pkt.pts=(double)(frame_index*calc_duration)/(double)(av_q2d(time_base1)*AV_TIME_BASE);
-						pkt.dts=pkt.pts;
-						pkt.duration=(double)calc_duration/(double)(av_q2d(time_base1)*AV_TIME_BASE);
-						frame_index++;
-					}
+			if(pkt.stream_index==videoindex_v){
+				//FIX：No PTS (Example: Raw H.264)
+				//Simple Write PTS
+				if(pkt.pts==AV_NOPTS_VALUE){
+					//Write PTS
+					AVRational time_base1=in_stream->time_base;
+					//Duration between 2 frames (us)
+					int64_t calc_duration=(double)AV_TIME_BASE/av_q2d(in_stream->r_frame_rate);
+					//Parameters
+					pkt.pts=(double)(frame_index*calc_duration)/(double)(av_q2d(time_base1)*AV_TIME_BASE);
+					pkt.dts=pkt.pts;
+					pkt.duration=(double)calc_duration/(double)(av_q2d(time_base1)*AV_TIME_BASE);
+					frame_index++;
+				}
 
-					cur_pts_v=pkt.pts;
+				cur_pts_v=pkt.pts;
 					
-				}
-			}else{
-				break;
 			}
-		/*}else{ //deal with audio frames
-			ifmt_ctx=ifmt_ctx_a; 
-			stream_index=audioindex_out;
-			if(av_read_frame(ifmt_ctx, &pkt) >= 0){
-				in_stream  = ifmt_ctx->streams[pkt.stream_index];
-				out_stream = ofmt_ctx->streams[stream_index];
-
-				if(pkt.stream_index==audioindex_a){
-
-					//FIX：No PTS
-					//Simple Write PTS
-					if(pkt.pts==AV_NOPTS_VALUE){
-						//Write PTS
-						AVRational time_base1=in_stream->time_base;
-						//Duration between 2 frames (us)
-						int64_t calc_duration=(double)AV_TIME_BASE/av_q2d(in_stream->r_frame_rate);
-						//Parameters
-						pkt.pts=(double)(frame_index*calc_duration)/(double)(av_q2d(time_base1)*AV_TIME_BASE);
-						pkt.dts=pkt.pts;
-						pkt.duration=(double)calc_duration/(double)(av_q2d(time_base1)*AV_TIME_BASE);
-						frame_index++;
-					}
-					cur_pts_a=pkt.pts;
-				}
-				
-			}else{
-				break;
-			}
-
-		}*/
+		}else{
+			break;
+		}
 
 		//Convert PTS/DTS
 		pkt.pts = av_rescale_q_rnd(pkt.pts, in_stream->time_base, out_stream->time_base, avRounding);
@@ -211,7 +179,7 @@ int main(int argc, char* argv[])
 
 end:
 	avformat_close_input(&ifmt_ctx_v);
-	avformat_close_input(&ifmt_ctx_a);
+	//avformat_close_input(&ifmt_ctx_a);
 	if (ofmt_ctx && !(ofmt->flags & AVFMT_NOFILE))
 		avio_close(ofmt_ctx->pb);
 	avformat_free_context(ofmt_ctx);
