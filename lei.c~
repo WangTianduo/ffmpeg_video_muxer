@@ -82,7 +82,7 @@ int main(int argc, char* argv[])
 	//const char *in_filename_a = "gowest.aac";
 	const char *in_filename_a = "../resource/huoyuanjia.mp3";
 
-	const char *out_filename = "../resource/cuc_ieschool.mp4";//Output file URL
+	const char *out_filename = "cuc_ieschool.mp4";//Output file URL
 	av_register_all();
 	//Input
 	if ((ret = avformat_open_input(&ifmt_ctx_v, in_filename_v, 0, 0)) < 0) {
